@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PatientInfo } from "@/lib/brain/types";
 import { createCaseSupabase } from "@/lib/brain/db";
+import { requestModelPrompt } from "@/lib/brain/model";
 
 export default function BrainInputPage() {
   const router = useRouter();
@@ -22,9 +23,22 @@ export default function BrainInputPage() {
     setError(null);
     setSubmitting(true);
     try {
+      // Ask backend model for a refined/generative prompt (optional; falls back to user prompt)
+      let generatedPrompt: string | null = null;
+      try {
+        generatedPrompt = await requestModelPrompt({
+          patient,
+          basePrompt,
+          ehrFiles,
+          ctScans: ctFiles,
+        });
+      } catch {
+        // ignore backend failures, proceed with user-provided basePrompt
+      }
+
       const created = await createCaseSupabase({
         patient,
-        basePrompt,
+        basePrompt: generatedPrompt ?? basePrompt,
         ehrFiles,
         ctScans: ctFiles,
       });
