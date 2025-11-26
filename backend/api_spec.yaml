@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Brain Imaging API
+  version: 0.1.0
+paths:
+  /cases:
+    post:
+      summary: Create case with EHR and CT uploads
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                basePrompt:
+                  type: string
+                patient:
+                  type: string
+                  description: JSON string matching Patient schema
+                ehrFiles:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                ctScans:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Case created
+  /cases/{caseId}:
+    get:
+      summary: Get case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Case object
+  /cases/{caseId}/generate:
+    post:
+      summary: Generate images
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timepoints:
+                  type: array
+                  items:
+                    type: string
+                    enum: ["now","3m","6m","12m"]
+                additionalPrompt:
+                  type: string
+      responses:
+        "200":
+          description: Updated case with images
+  /cases/{caseId}/reprompt:
+    post:
+      summary: Reprompt images (alias of generate)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timepoints:
+                  type: array
+                  items:
+                    type: string
+                    enum: ["now","3m","6m","12m"]
+                additionalPrompt:
+                  type: string
+      responses:
+        "200":
+          description: Updated case with images
+  /cases/{caseId}/video:
+    post:
+      summary: Generate progression video from images
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fps:
+                  type: integer
+                durationSeconds:
+                  type: integer
+                includeTimepoints:
+                  type: array
+                  items:
+                    type: string
+                    enum: ["now","3m","6m","12m"]
+      responses:
+        "200":
+          description: Updated case with videoUrl
+
+
