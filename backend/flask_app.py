@@ -14,16 +14,44 @@ Replace the stubbed logic with your model inference.
 """
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import json
 import os
 import time
 import requests
 
 app = Flask(__name__)
+# Allow frontend (http://localhost:3000) to call Flask (http://localhost:5001)
+# Loosened for dev; tighten origins in production.
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+hardcoded_prompt = ([
+  {
+    "time_point": "now",
+    "prompt": "High-resolution axial CT scan of the human brain, soft tissue window for brain parenchyma. Patient is a 72-year-old female, Evelyn Reed, diagnosed with early-stage Alzheimer's disease 6 months prior, currently on Donepezil. Image shows mild generalized cortical atrophy, distinctly mild hippocampal atrophy, and subtle widening of the sulci in the temporal and parietal regions. Ventricular size is within normal limits for age. No signs of acute hemorrhage, mass effect, or significant vascular calcifications. This represents the current baseline anatomical condition after 6 months of managed symptoms, displaying realistic CT characteristics. Clinically accurate, photorealistic medical rendering."
+  },
+  {
+    "time_point": "3m",
+    "prompt": "High-resolution axial CT scan of the human brain, soft tissue window for brain parenchyma. Patient is a 72-year-old female, Evelyn Reed, 3 months post 'current state' (9 months post-diagnosis) with continued Donepezil. Image exhibits *slightly increased* generalized cortical atrophy compared to the baseline, *noticeably moderate hippocampal atrophy*, and *mildly increased widening* of the sulci in the temporal and parietal regions. Lateral ventricles show *minimal, subtle enlargement*. No new acute findings, mass effect, or significant vascular changes. This illustrates early, subtle progression of Alzheimer's-related neurodegeneration, demonstrating a realistic transformation from the 'now' state. Clinically accurate, photorealistic medical rendering."
+  },
+  {
+    "time_point": "6m",
+    "prompt": "High-resolution axial CT scan of the human brain, soft tissue window for brain parenchyma. Patient is a 72-year-old female, Evelyn Reed, 6 months post 'current state' (12 months post-diagnosis). Image reveals *distinctly moderate generalized cortical atrophy*, *marked hippocampal atrophy*, and *moderate widening* of the sulci, particularly prominent in the temporal and parietal lobes. Lateral ventricles show *definite, mild enlargement*. No new acute lesions or significant density changes indicating hemorrhage. This represents continued, more evident progression of Alzheimer's disease, showcasing a realistic and expected evolution from the 3-month state. Clinically accurate, photorealistic medical rendering."
+  },
+  {
+    "time_point": "12m",
+    "prompt": "High-resolution axial CT scan of the human brain, soft tissue window for brain parenchyma. Patient is a 72-year-old female, Evelyn Reed, 12 months post 'current state' (18 months post-diagnosis). Image demonstrates *significant generalized cortical atrophy*, *severe hippocampal atrophy with pronounced volume loss*, and *marked widening* of cortical sulci across the cerebral hemispheres, most prominent in temporal and parietal regions. Lateral and third ventricles appear *moderately enlarged*, consistent with ex-vacuo hydrocephalus due to brain volume loss. No new acute pathology or abnormal density. This illustrates substantial progression of Alzheimer's-related neurodegeneration, representing the realistic culmination of the 12-month transformation. Clinically accurate, photorealistic medical rendering."
+  }
+])
+# todo(NISHANK): Implement this endpoint.
 @app.route("/model/prompt", methods=["POST"])
 def model_prompt():
+  # hard-coded prompt for now -- Nishank can remove this later.
+  print("prompt returned by the model: ", jsonify({"generated_prompt": hardcoded_prompt}))
+  return jsonify({"generated_prompt": hardcoded_prompt})
+
   # Parse text fields
+  """
   base_prompt = request.form.get("base_prompt", "", type=str)
   patient_raw = request.form.get("patient", "{}", type=str)
   try:
@@ -44,6 +72,7 @@ def model_prompt():
   generated_prompt = (f"{base_prompt} [patient:{name or 'n/a'} | {file_hint}]").strip()
 
   return jsonify({"generated_prompt": generated_prompt})
+  """
 
 @app.route("/model/generate_images", methods=["POST"])
 def generate_images():
@@ -53,6 +82,7 @@ def generate_images():
   """
   payload = request.get_json(silent=True) or {}
   prompt = payload.get("prompt") or ""
+  print("recieved prompt: ", prompt)
   timepoints = payload.get("timepoints") or ["now", "3m", "6m", "12m"]
 
   # Hard-coded BFL endpoint; replace with your own model as needed
@@ -100,9 +130,22 @@ def generate_images():
     "12m": "brain state in approximately 12 months",
   }
   images = {}
+
+  # If prompt is an object like { "now": "...", "3m": "...", ... } use those directly.
+  # Otherwise if it's a string, fall back to suffix composition for each timepoint.
+  prompt_per_tp = {}
+  if isinstance(prompt, dict):
+    # Normalize keys to expected timepoints
+    for tp in timepoints:
+      prompt_per_tp[tp] = prompt.get(tp)
+  else:
+    # Single string prompt for all timepoints
+    for tp in timepoints:
+      suffix = tp_to_suffix.get(tp, str(tp))
+      prompt_per_tp[tp] = f"{prompt}. Please depict the {suffix}."
+
   for tp in timepoints:
-    suffix = tp_to_suffix.get(tp, str(tp))
-    composed = f"{prompt}. Please depict the {suffix}."
+    composed = prompt_per_tp.get(tp) or ""
     try:
       url = generate_one(composed)
       images[tp] = url
@@ -115,8 +158,8 @@ if __name__ == "__main__":
   # For local testing:
   #   pip install flask
   #   python flask_app.py
-  #   export NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
+  #   export NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
   # Then submit the frontend form
-  app.run(host="0.0.0.0", port=5001, debug=True)
+  app.run(host="0.0.0.0", port=5000, debug=True)
 
 

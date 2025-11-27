@@ -2,7 +2,7 @@
 
 import { Timepoint } from "./types";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND_URL = "http://127.0.0.1:5000/"
 
 export async function requestGeneratedImages(input: {
   prompt: string;

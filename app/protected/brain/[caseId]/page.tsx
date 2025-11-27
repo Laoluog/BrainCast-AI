@@ -23,6 +23,7 @@ export default function BrainCaseOutputPage() {
     "6m": true,
     "12m": true,
   });
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
 
   const anySelected = useMemo(
     () => ALL_TPS.some((tp) => selected[tp]),
@@ -83,7 +84,9 @@ export default function BrainCaseOutputPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Case {caseId}</h1>
+      <h1 className="text-2xl font-bold">
+        Case: {data?.patient?.firstName ?? ""} {data?.patient?.lastName ?? ""} - {data?.patient?.mrn ?? ""}
+      </h1>
       {loading ? <div className="text-sm text-muted-foreground">Loading...</div> : null}
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
 
@@ -103,7 +106,8 @@ export default function BrainCaseOutputPage() {
                       <img
                         src={img.url}
                         alt={`${tp} brain image`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-zoom-in"
+                        onClick={() => setViewerUrl(img.url)}
                       />
                     ) : (
                       <span className="text-sm text-muted-foreground">No image yet</span>
@@ -154,6 +158,29 @@ export default function BrainCaseOutputPage() {
             </div>
           </div>
         </>
+      ) : null}
+
+      {viewerUrl ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setViewerUrl(null)}
+        >
+          <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center">
+            <img
+              src={viewerUrl}
+              alt="Expanded brain image"
+              className="max-h-[90vh] max-w-[90vw] object-contain rounded shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              type="button"
+              className="absolute top-2 right-2 rounded px-3 py-1 bg-white/90 text-black text-sm hover:bg-white"
+              onClick={() => setViewerUrl(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );
