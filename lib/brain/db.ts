@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { CaseData, ImageResult, PatientInfo, Timepoint } from "./types";
+import { requestGeneratedImages } from "./generator";
 
 export type CaseRow = {
   id: string;
@@ -109,15 +110,39 @@ export async function generateImagesSupabase(params: {
   const tps = params.timepoints ?? ["now", "3m", "6m", "12m"];
   const nextImages: Partial<Record<Timepoint, ImageResult>> = { ...current.images };
   const chosenBase = current.generatedPrompt ?? current.basePrompt;
-  for (const tp of tps) {
-    nextImages[tp] = {
-      url: placeholder(current.id, tp),
-      timepoint: tp,
-      promptUsed: params.additionalPrompt
-        ? `${chosenBase} ${params.additionalPrompt}`.trim()
-        : chosenBase,
-    };
+  
+  // Build the full prompt for image generation
+  const fullPrompt = params.additionalPrompt
+    ? `${chosenBase} ${params.additionalPrompt}`.trim()
+    : chosenBase;
+
+  try {
+    // Call the Flask backend to generate actual images
+    const imageUrls = await requestGeneratedImages({
+      prompt: fullPrompt,
+      timepoints: tps,
+    });
+
+    // Update the images object with the generated URLs
+    for (const tp of tps) {
+      nextImages[tp] = {
+        url: imageUrls[tp] || placeholder(current.id, tp), // fallback to placeholder if generation fails
+        timepoint: tp,
+        promptUsed: fullPrompt,
+      };
+    }
+  } catch (error) {
+    console.error("Failed to generate images from backend:", error);
+    // Fallback to placeholders if backend call fails
+    for (const tp of tps) {
+      nextImages[tp] = {
+        url: placeholder(current.id, tp),
+        timepoint: tp,
+        promptUsed: fullPrompt,
+      };
+    }
   }
+
   const { data, error } = await supabase
     .from("cases")
     .update({ images: nextImages })

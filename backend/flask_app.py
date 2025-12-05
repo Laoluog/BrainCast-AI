@@ -32,53 +32,6 @@ app = Flask(__name__)
 # Allow frontend (http://localhost:3000) to call Flask (http://localhost:5001)
 # Loosened for dev; tighten origins in production.
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-
-hardcoded_prompt = ([
-    {
-        "time_point": "now",
-        "prompt":
-            "Generate exactly one high-resolution axial (top-down) CT scan image of the human brain. "
-            "Soft tissue window for brain parenchyma. The patient is a 72-year-old female, Evelyn Reed, "
-            "diagnosed with early-stage Alzheimer's disease 6 months ago, currently on Donepezil. The image "
-            "must show mild generalized cortical atrophy, distinctly mild hippocampal atrophy, and subtle "
-            "widening of the sulci in the temporal and parietal regions. Ventricular size should appear "
-            "normal for age. No acute hemorrhage, mass effect, or vascular calcifications. Only show one image, "
-            "top-down CT view. Do not render multiple images or views. Clinically accurate, photorealistic."
-    },
-    {
-        "time_point": "3m",
-        "prompt":
-            "Create exactly one high-resolution axial CT scan (top-down view) image of the brain, "
-            "soft tissue window. The patient is a 72-year-old female, Evelyn Reed, now 3 months after the "
-            "previous state (9 months post-diagnosis) with continued Donepezil. Depict slightly increased "
-            "generalized cortical atrophy versus baseline, noticeably moderate hippocampal atrophy, and mildly "
-            "increased widening of temporal and parietal sulci. Lateral ventricles with minimal, subtle "
-            "enlargement. No new acute findings or mass effect. Only one image, top-down CT. No other views. "
-            "Clinically accurate, photorealistic."
-    },
-    {
-        "time_point": "6m",
-        "prompt":
-            "Produce a single, high-resolution axial (top-down) CT image of the brain, soft tissue window. "
-            "Patient: 72-year-old female, Evelyn Reed, 6 months after previous state (12 months post-diagnosis). "
-            "Show distinctly moderate generalized cortical atrophy, marked hippocampal atrophy, and moderate "
-            "widening of sulci, most apparent in the temporal and parietal lobes. Lateral ventricles should "
-            "show definite, mild enlargement. No new acute lesions. The output must be only one top-down brain "
-            "CT image. Clinically accurate, photorealistic."
-    },
-    {
-        "time_point": "12m",
-        "prompt":
-            "Output exactly one high-resolution top-down (axial) CT scan image of the brain with soft tissue "
-            "window. Patient: 72-year-old female, Evelyn Reed, 12 months after previous state (18 months "
-            "post-diagnosis). Clearly show significant generalized cortical atrophy, severe hippocampal atrophy "
-            "with pronounced volume loss, and marked widening of cortical sulci in temporal and parietal regions. "
-            "Lateral and third ventricles appear moderately enlarged, consistent with ex-vacuo hydrocephalus. "
-            "No new acute pathology or abnormal density. Absolutely ensure a single image, axial/top-down CT only. "
-            "Clinically accurate, photorealistic."
-    }
-])
-# todo(NISHANK): Implement this endpoint.
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-pro-latest")
 
@@ -461,6 +414,6 @@ if __name__ == "__main__":
   #   python flask_app.py
   #   export NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
   # Then submit the frontend form
-  app.run(host="0.0.0.0", port=5001, debug=True)
+  app.run(host="0.0.0.0", port=5000, debug=True)
 
 

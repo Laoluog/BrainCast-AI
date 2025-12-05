@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { CaseData, Timepoint } from "@/lib/brain/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,8 @@ export default function BrainCaseOutputPage() {
     "12m": false,
   });
   const [editingAnnoId, setEditingAnnoId] = useState<string | null>(null);
+  const [showTimeScrubber, setShowTimeScrubber] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
 
   const anySelected = useMemo(
     () => ALL_TPS.some((tp) => selected[tp]),
@@ -112,134 +116,182 @@ export default function BrainCaseOutputPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">
-        Case: {data?.patient?.firstName ?? ""} {data?.patient?.lastName ?? ""} - {data?.patient?.mrn ?? ""}
-      </h1>
-      {loading ? <div className="text-sm text-muted-foreground">Loading...</div> : null}
-      {error ? <div className="text-sm text-red-600">{error}</div> : null}
-
-      {data ? (
-        <>
-          {/* Time Scrubber preview */}
-          <div className="rounded border p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-medium">Time Scrubber</div>
-              <div className="text-sm text-muted-foreground">
-                {scrubTp === "now" ? "Now" : scrubTp.toUpperCase()}
-              </div>
-            </div>
-            <div className="relative w-full overflow-hidden rounded bg-muted/40 aspect-video">
-              {data.images[scrubTp]?.url ? (
-                <img
-                  src={data.images[scrubTp]!.url}
-                  alt={`${scrubTp} brain image`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
-                  No image for {scrubTp}
-                </div>
-              )}
-            </div>
-            <div className="mt-3 flex items-center gap-4">
-              <span className="text-xs">Now</span>
-              <input
-                type="range"
-                min={0}
-                max={3}
-                step={1}
-                value={scrubIndex}
-                onChange={(e) => setScrubIndex(Number(e.target.value))}
-                className="flex-1"
-              />
-              <span className="text-xs">12m</span>
-            </div>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black px-6 py-12 text-white sm:px-12 lg:px-16">
+      <div className="flex w-full max-w-7xl flex-col gap-12">
+        <header className="space-y-6">
+          <Link
+            href="/protected/brain/cases"
+            className="font-roboto inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/70 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            back to cases
+          </Link>
+          <div className="space-y-4">
+            <h1 className="font-roboto text-3xl font-bold uppercase tracking-widest sm:text-4xl lg:text-5xl">
+              Case: {data?.patient?.firstName ?? ""} {data?.patient?.lastName ?? ""}
+              {data?.patient?.mrn ? ` - ${data.patient.mrn}` : ""}
+            </h1>
+            {loading ? <div className="font-roboto text-sm text-white/70">Loading...</div> : null}
+            {error ? <div className="font-roboto text-sm text-red-400">{error}</div> : null}
           </div>
+        </header>
 
-          {/* Compare slider */}
-          <div className="rounded border p-3">
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <div className="font-medium">Compare</div>
-              <div className="flex items-center gap-2 text-sm">
-                <label>Left</label>
-                <select
-                  className="border rounded px-2 py-1 text-sm bg-background"
-                  value={compareLeft}
-                  onChange={(e) => setCompareLeft(e.target.value as Timepoint)}
-                >
-                  {TP_ORDER.map((tp) => (
-                    <option key={tp} value={tp}>
-                      {tp === "now" ? "Now" : tp.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-                <label>Right</label>
-                <select
-                  className="border rounded px-2 py-1 text-sm bg-background"
-                  value={compareRight}
-                  onChange={(e) => setCompareRight(e.target.value as Timepoint)}
-                >
-                  {TP_ORDER.map((tp) => (
-                    <option key={tp} value={tp}>
-                      {tp === "now" ? "Now" : tp.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="relative w-full overflow-hidden rounded bg-muted/40 aspect-video select-none">
-              {data.images[compareRight]?.url ? (
-                <img
-                  src={data.images[compareRight]!.url}
-                  alt={`${compareRight} brain image`}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              ) : null}
-              {data.images[compareLeft]?.url ? (
-                <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ width: `${comparePos}%` }}
-                >
-                  <img
-                    src={data.images[compareLeft]!.url}
-                    alt={`${compareLeft} brain image`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : null}
-              <div
-                className="absolute top-0 bottom-0"
-                style={{ left: `calc(${comparePos}% - 1px)` }}
+        {data ? (
+          <>
+            {/* Time Scrubber preview */}
+            <section className="space-y-6 border-t border-white/20 pt-12">
+              <button
+                onClick={() => setShowTimeScrubber(!showTimeScrubber)}
+                className="flex w-full items-center justify-between border-l-2 border-white pl-4 transition hover:border-white/60"
               >
-                <div className="w-0.5 h-full bg-white/70" />
-                <div className="absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-white/90 shadow border flex items-center justify-center text-xs font-medium">
-                  ||
-                </div>
-              </div>
-            </div>
-            <div className="mt-3">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={comparePos}
-                onChange={(e) => setComparePos(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ALL_TPS.map((tp) => {
-              const img = data.images[tp];
-              return (
-                <div key={tp} className="rounded border p-3">
-                  <div className="font-medium mb-2">
-                    {tp === "now" ? "Current" : tp.toUpperCase()}
+                <p className="font-roboto text-xs font-bold uppercase tracking-widest text-white/80">
+                  Time Scrubber
+                </p>
+                {showTimeScrubber ? (
+                  <ChevronUp className="h-5 w-5 text-white/70" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-white/70" />
+                )}
+              </button>
+              {showTimeScrubber && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="font-roboto text-sm text-white/70">
+                      {scrubTp === "now" ? "Now" : scrubTp.toUpperCase()}
+                    </div>
                   </div>
-                  <div
-                    className="aspect-video rounded overflow-hidden bg-muted/40 flex items-center justify-center relative"
+                  <div className="relative w-full overflow-hidden bg-black border border-white/20 aspect-video">
+                    {data.images[scrubTp]?.url ? (
+                      <img
+                        src={data.images[scrubTp]!.url}
+                        alt={`${scrubTp} brain image`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm text-white/60">
+                        No image for {scrubTp}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-roboto text-xs text-white/70">Now</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={3}
+                      step={1}
+                      value={scrubIndex}
+                      onChange={(e) => setScrubIndex(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="font-roboto text-xs text-white/70">12m</span>
+                  </div>
+                </>
+              )}
+            </section>
+
+            {/* Compare slider */}
+            <section className="space-y-6">
+              <button
+                onClick={() => setShowCompare(!showCompare)}
+                className="flex w-full items-center justify-between border-l-2 border-white pl-4 transition hover:border-white/60"
+              >
+                <p className="font-roboto text-xs font-bold uppercase tracking-widest text-white/80">
+                  Compare
+                </p>
+                {showCompare ? (
+                  <ChevronUp className="h-5 w-5 text-white/70" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-white/70" />
+                )}
+              </button>
+              {showCompare && (
+                <>
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <label className="font-roboto text-xs text-white/70">Left</label>
+                    <select
+                      className="border border-white/30 rounded px-3 py-1 text-sm bg-black text-white font-roboto"
+                      value={compareLeft}
+                      onChange={(e) => setCompareLeft(e.target.value as Timepoint)}
+                    >
+                      {TP_ORDER.map((tp) => (
+                        <option key={tp} value={tp}>
+                          {tp === "now" ? "Now" : tp.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="font-roboto text-xs text-white/70">Right</label>
+                    <select
+                      className="border border-white/30 rounded px-3 py-1 text-sm bg-black text-white font-roboto"
+                      value={compareRight}
+                      onChange={(e) => setCompareRight(e.target.value as Timepoint)}
+                    >
+                      {TP_ORDER.map((tp) => (
+                        <option key={tp} value={tp}>
+                          {tp === "now" ? "Now" : tp.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="relative w-full overflow-hidden rounded bg-black border border-white/20 aspect-video select-none">
+                    {data.images[compareRight]?.url ? (
+                      <img
+                        src={data.images[compareRight]!.url}
+                        alt={`${compareRight} brain image`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : null}
+                    {data.images[compareLeft]?.url ? (
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ width: `${comparePos}%` }}
+                      >
+                        <img
+                          src={data.images[compareLeft]!.url}
+                          alt={`${compareLeft} brain image`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : null}
+                    <div
+                      className="absolute top-0 bottom-0"
+                      style={{ left: `calc(${comparePos}% - 1px)` }}
+                    >
+                      <div className="w-0.5 h-full bg-white/70" />
+                      <div className="absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-white/90 shadow border flex items-center justify-center text-xs font-medium">
+                        ||
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={comparePos}
+                      onChange={(e) => setComparePos(Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="space-y-6">
+              <p className="font-roboto border-l-2 border-white pl-4 text-xs font-bold uppercase tracking-widest text-white/80">
+                All timepoints
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {ALL_TPS.map((tp) => {
+                  const img = data.images[tp];
+                  return (
+                    <div key={tp} className="space-y-3">
+                      <div className="font-roboto text-sm font-bold uppercase tracking-widest text-white">
+                        {tp === "now" ? "Current" : tp.toUpperCase()}
+                      </div>
+                      <div
+                        className="aspect-video rounded overflow-hidden bg-black border border-white/20 flex items-center justify-center relative"
                     onClick={(e) => {
                       const imgEl = data.images[tp];
                       if (!annotateMode[tp] || !imgEl) return;
@@ -308,8 +360,8 @@ export default function BrainCaseOutputPage() {
                   <div className="mt-2 flex items-center gap-3">
                     <Button
                       size="sm"
-                      variant="secondary"
                       disabled={!img || videoLoading[tp]}
+                      className="bg-gray-300 text-black hover:bg-gray-400 disabled:opacity-50 font-roboto text-xs"
                       onClick={async () => {
                         if (!img || !data) return;
                         setVideoLoading((s) => ({ ...s, [tp]: true }));
@@ -333,7 +385,11 @@ export default function BrainCaseOutputPage() {
                     </Button>
                     <Button
                       size="sm"
-                      variant={annotateMode[tp] ? "default" : "outline"}
+                      className={`font-roboto text-xs ${
+                        annotateMode[tp]
+                          ? "bg-gray-400 text-black hover:bg-gray-500"
+                          : "bg-gray-300 text-black hover:bg-gray-400"
+                      }`}
                       onClick={() =>
                         setAnnotateMode((m) => ({ ...m, [tp]: !m[tp] }))
                       }
@@ -342,7 +398,7 @@ export default function BrainCaseOutputPage() {
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
+                      className="bg-gray-300 text-black hover:bg-gray-400 font-roboto text-xs"
                       onClick={() =>
                         setAnnotations((prev) => ({ ...prev, [tp]: [] }))
                       }
@@ -358,51 +414,65 @@ export default function BrainCaseOutputPage() {
                   {/* <div className="mt-2 text-xs text-muted-foreground line-clamp-2">
                     {img?.promptUsed ? `Prompt: ${img.promptUsed}` : "—"}
                   </div> */}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex gap-3 flex-wrap">
-            <Button onClick={onGenerate} disabled={loading}>
-              {loading ? "Working..." : "Generate Images"}
-            </Button>
-          </div>
-
-          <div className="rounded border p-4 flex flex-col gap-4">
-            <div className="font-medium">Edit and Reprompt</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <Input
-                  placeholder="Describe treatments or changes to guide regeneration"
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                />
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-3">
-                {ALL_TPS.map((tp) => (
-                  <label key={tp} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={selected[tp]}
-                      onCheckedChange={(checked) =>
-                        setSelected((s) => ({ ...s, [tp]: Boolean(checked) }))
-                      }
-                    />
-                    {tp === "now" ? "Now" : tp.toUpperCase()}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Button onClick={onReprompt} disabled={!editText.trim() || !anySelected || loading}>
-                {loading ? "Working..." : "Reprompt Selected"}
+            </section>
+
+            <section className="space-y-6 border-t border-white/20 pt-12">
+              <Button 
+                onClick={onGenerate} 
+                disabled={loading}
+                className="font-roboto border-2 border-white bg-transparent px-8 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-white hover:text-black"
+              >
+                {loading ? "Working..." : "Generate Images"}
               </Button>
-            </div>
-          </div>
-        </>
-      ) : null}
+            </section>
 
-      {viewerUrl ? (
+            <section className="space-y-6">
+              <p className="font-roboto border-l-2 border-white pl-4 text-xs font-bold uppercase tracking-widest text-white/80">
+                Edit and Reprompt
+              </p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <Input
+                      className="font-roboto border-2 border-white/30 bg-black text-white placeholder:text-white/50"
+                      placeholder="Describe treatments or changes to guide regeneration"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {ALL_TPS.map((tp) => (
+                      <label key={tp} className="flex items-center gap-2 text-sm font-roboto text-white/80">
+                        <Checkbox
+                          checked={selected[tp]}
+                          onCheckedChange={(checked) =>
+                            setSelected((s) => ({ ...s, [tp]: Boolean(checked) }))
+                          }
+                        />
+                        {tp === "now" ? "Now" : tp.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Button 
+                    onClick={onReprompt} 
+                    disabled={!editText.trim() || !anySelected || loading}
+                    className="font-roboto border-2 border-white bg-transparent px-8 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-white hover:text-black disabled:opacity-50"
+                  >
+                    {loading ? "Working..." : "Reprompt Selected"}
+                  </Button>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : null}
+
+        {viewerUrl ? (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
           onClick={() => setViewerUrl(null)}
@@ -448,6 +518,7 @@ export default function BrainCaseOutputPage() {
           </div>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
