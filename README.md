@@ -1,7 +1,7 @@
 # BrainCast AI
 
 > A multimodal AI system for generating longitudinal brain imaging reconstructions from clinical data        
-> Demo Video: https://www.youtube.com/watch?v=MZBBhJiUcmc
+> Demo Video: https://www.youtube.com/watch?v=MZBBhJiUcmc                    
 > Research Paper: https://media.licdn.com/dms/document/media/v2/D4E2DAQFgWxDDzdwJkg/profile-treasury-document-pdf-analyzed/B4EZr8OnAmKMAw-/0/1765168281672?e=1768435200&v=beta&t=-z0yQgwnuwQyYDDErEfl4h-kx24MKyTdsEoSyBW_oC4
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3-black?logo=next.js)](https://nextjs.org/)
